@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { color: #333; }
+    textarea { width: 100%; height: 300px; margin-bottom: 10px; }
+    button { padding: 10px 20px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Admin Panel</h1>
+  <p><strong>Withdraw Requests:</strong></p>
+  <textarea id="withdraws"></textarea><br>
+  <button onclick="saveWithdraws()">✅ Mark Processed</button>
+
+  <script>
+    async function loadWithdraws() {
+      const res = await fetch('/withdraws.json');
+      const data = await res.json();
+      document.getElementById('withdraws').value = JSON.stringify(data, null, 2);
+    }
+
+    async function saveWithdraws() {
+      const updated = document.getElementById('withdraws').value;
+      await fetch('/update-withdraws', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: updated
+      });
+      alert("✅ Updated!");
+    }
+
+    loadWithdraws();
+  </script>
+</body>
+</html>
