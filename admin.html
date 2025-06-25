@@ -1,48 +1,24 @@
+
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Admin Panel - Withdraw Requests</title>
-  <style>
-    body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-    h1 { color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
-    th { background: #333; color: white; }
-    tr:nth-child(even) { background: #eee; }
-  </style>
-</head>
+<head><title>Withdraw Requests</title></head>
 <body>
-  <h1>Withdraw Requests</h1>
-  <table id="withdrawTable">
-    <thead>
-      <tr>
-        <th>User ID</th>
-        <th>Username</th>
-        <th>Wallet</th>
-        <th>Amount</th>
-        <th>Time</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <script>
-    fetch("/withdraw-requests")
-      .then(res => res.json())
-      .then(data => {
-        const tbody = document.querySelector("#withdrawTable tbody");
-        data.reverse().forEach(req => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${req.userId}</td>
-            <td>@${req.username || "NoUsername"}</td>
-            <td>${req.wallet}</td>
-            <td>${req.amount}</td>
-            <td>${new Date(req.time).toLocaleString()}</td>
-          `;
-          tbody.appendChild(row);
-        });
-      });
-  </script>
+<h2>Withdraw Requests</h2>
+<div id="data"></div>
+<script>
+fetch('/withdraw-requests')
+  .then(res => res.json())
+  .then(data => {
+    const container = document.getElementById("data");
+    if (data.length === 0) return container.innerHTML = "<p>No requests yet</p>";
+    const table = document.createElement("table");
+    table.border = "1";
+    table.innerHTML = "<tr><th>User ID</th><th>Username</th><th>Wallet</th><th>Amount</th><th>Time</th></tr>";
+    data.forEach(d => {
+      table.innerHTML += `<tr><td>${d.userId}</td><td>${d.username}</td><td>${d.wallet}</td><td>${d.amount}</td><td>${d.time}</td></tr>`;
+    });
+    container.appendChild(table);
+  });
+</script>
 </body>
 </html>
