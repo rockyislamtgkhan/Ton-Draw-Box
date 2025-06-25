@@ -4,33 +4,25 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(express.json());
 app.use(express.static('public'));
 
-// ✅ Withdraw JSON file path
-const withdrawFile = path.join(__dirname, 'withdraws.json');
-let withdrawRequests = [];
+// Withdraw file path
+const withdrawFile = path.join(__dirname, 'data', 'withdraw.json');
 
-// ✅ If file exists, load data; otherwise initialize
-if (fs.existsSync(withdrawFile)) {
-  withdrawRequests = JSON.parse(fs.readFileSync(withdrawFile));
-} else {
-  withdrawRequests = [];
-}
-
-// ✅ Admin panel password protect
-const adminUsername = 'admin'; // Change korle mone rakhbe
-const adminPassword = 'drawbox123'; // Change korle mone rakhbe
+// Password protect Admin
+const adminUsername = 'admin';
+const adminPassword = 'drawbox123';
 
 app.use('/admin', (req, res, next) => {
   const auth = req.headers.authorization;
-  if (!auth || auth.indexOf('Basic ') === -1) {
+  if (!auth || !auth.startsWith('Basic ')) {
     res.set('WWW-Authenticate', 'Basic realm="Admin Area"');
     return res.status(401).send('Authentication Required');
   }
 
-  const base64Credentials = auth.split(' ')[1];
-  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+  const credentials = Buffer.from(auth.split(' ')[1], 'base64').toString();
   const [username, password] = credentials.split(':');
 
   if (username === adminUsername && password === adminPassword) {
@@ -41,41 +33,40 @@ app.use('/admin', (req, res, next) => {
   return res.status(401).send('Access Denied');
 });
 
-// ✅ Serve Admin Panel HTML
+// Admin panel route
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// ✅ Withdraw POST route
+// Save withdraw request
 app.post('/withdraw', (req, res) => {
   const { userId, username, wallet, amount } = req.body;
-
   if (!userId || !wallet || !amount) {
-    return res.status(400).json({ success: false, error: "Missing fields" });
+    return res.status(400).json({ success: false });
   }
 
-  const request = {
-    userId,
-    username,
-    wallet,
-    amount,
-    time: new Date().toISOString()
-  };
+  const existing = fs.existsSync(withdrawFile)
+    ? JSON.parse(fs.readFileSync(withdrawFile))
+    : [];
 
-  withdrawRequests.push(request);
+  existing.push({ userId, username, wallet, amount, time: new Date().toISOString() });
 
-  // Save to file
-  fs.writeFileSync(withdrawFile, JSON.stringify(withdrawRequests, null, 2));
+  fs.mkdirSync(path.dirname(withdrawFile), { recursive: true });
+  fs.writeFileSync(withdrawFile, JSON.stringify(existing, null, 2));
 
   res.json({ success: true });
 });
 
-// ✅ Withdraw requests fetch route
+// Return withdraw list
 app.get('/withdraw-requests', (req, res) => {
-  res.json(withdrawRequests);
+  if (fs.existsSync(withdrawFile)) {
+    const data = fs.readFileSync(withdrawFile);
+    res.json(JSON.parse(data));
+  } else {
+    res.json([]);
+  }
 });
 
-// ✅ Server start
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
