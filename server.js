@@ -1,48 +1,47 @@
 const express = require('express');
-const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static('public'));
 
-const withdrawFile = path.join(__dirname, 'data', 'withdraw.json');
+// ✅ Admin panel password protect
+const adminUsername = 'admin'; // Change korle mon rakhbe
+const adminPassword = 'drawbox123'; // Change korle mon rakhbe
 
-// POST: Receive withdraw requests
-app.post('/withdraw', (req, res) => {
-  const { userId, username, wallet, amount } = req.body;
-  if (!userId || !wallet || !amount) {
-    return res.status(400).json({ success: false });
+app.use('/admin', (req, res, next) => {
+  const auth = req.headers.authorization;
+  if (!auth || auth.indexOf('Basic ') === -1) {
+    res.set('WWW-Authenticate', 'Basic realm="Admin Area"');
+    return res.status(401).send('Authentication Required');
   }
 
-  const existing = fs.existsSync(withdrawFile)
-    ? JSON.parse(fs.readFileSync(withdrawFile))
-    : [];
+  const base64Credentials = auth.split(' ')[1];
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('ascii');
+  const [username, password] = credentials.split(':');
 
-  existing.push({ userId, username, wallet, amount, time: new Date().toISOString() });
+  if (username === adminUsername && password === adminPassword) {
+    return next();
+  }
 
-  fs.writeFileSync(withdrawFile, JSON.stringify(existing, null, 2));
-
-  res.json({ success: true });
+  res.set('WWW-Authenticate', 'Basic realm="Admin Area"');
+  return res.status(401).send('Access Denied');
 });
 
-// GET: Admin panel UI
+// 🔽 Example admin route
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
-// GET: List of withdraw requests
+// Baaki routes jemon withdraw, balance, etc.
+app.post('/withdraw', (req, res) => {
+  // ...
+});
+
 app.get('/withdraw-requests', (req, res) => {
-  if (fs.existsSync(withdrawFile)) {
-    const data = fs.readFileSync(withdrawFile);
-    res.json(JSON.parse(data));
-  } else {
-    res.json([]);
-  }
+  // ...
 });
 
 app.listen(PORT, () => {
