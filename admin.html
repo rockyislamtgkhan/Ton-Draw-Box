@@ -1,55 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Panel - Ton Draw Box</title>
+  <meta charset="UTF-8" />
+  <title>Admin Panel - TON Draw Box</title>
   <style>
-    body { font-family: Arial; background: #f2f2f2; padding: 20px; }
-    h1 { color: #333; }
-    table { width: 100%; border-collapse: collapse; background: white; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
-    th { background: #eee; }
-    .section { margin-bottom: 40px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 { color: gold; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #444;
+      text-align: left;
+    }
+    th {
+      background: #333;
+    }
+    tr:nth-child(even) {
+      background: #222;
+    }
   </style>
 </head>
 <body>
-  <h1>Admin Panel</h1>
+  <h1>📤 Withdraw Requests</h1>
+  <table id="withdraw-table">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Username</th>
+        <th>Wallet</th>
+        <th>Amount</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  <div class="section">
-    <h2>💰 User Balances</h2>
-    <table id="balancesTable">
-      <tr><th>User ID</th><th>Balance (TON)</th></tr>
-    </table>
-  </div>
-
-  <div class="section">
-    <h2>📤 Withdraw Requests</h2>
-    <table id="withdrawTable">
-      <tr><th>User ID</th><th>Username</th><th>Wallet</th><th>Amount</th><th>Time</th></tr>
-    </table>
-  </div>
+  <h1>🧾 User Balances</h1>
+  <table id="balance-table">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Balance (TON)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <script>
     async function loadData() {
-      // Load balances
-      const bRes = await fetch('/balances.json');
-      const balances = await bRes.json();
-      const bTable = document.getElementById('balancesTable');
-      Object.keys(balances).forEach(id => {
-        const row = `<tr><td>${id}</td><td>${balances[id]}</td></tr>`;
-        bTable.insertAdjacentHTML('beforeend', row);
-      });
+      try {
+        const withdrawRes = await fetch('/withdraw-requests');
+        const withdraws = await withdrawRes.json();
+        const withdrawTable = document.querySelector('#withdraw-table tbody');
+        withdrawTable.innerHTML = '';
+        withdraws.forEach(w => {
+          const row = `<tr>
+            <td>${w.userId}</td>
+            <td>${w.username}</td>
+            <td>${w.wallet}</td>
+            <td>${w.amount}</td>
+            <td>${w.time}</td>
+          </tr>`;
+          withdrawTable.innerHTML += row;
+        });
 
-      // Load withdraw requests
-      const wRes = await fetch('/withdraw-requests');
-      const requests = await wRes.json();
-      const wTable = document.getElementById('withdrawTable');
-      requests.forEach(req => {
-        const row = `<tr><td>${req.userId}</td><td>${req.username}</td><td>${req.wallet}</td><td>${req.amount}</td><td>${req.time}</td></tr>`;
-        wTable.insertAdjacentHTML('beforeend', row);
-      });
+        const balanceRes = await fetch('/balances');
+        const balances = await balanceRes.json();
+        const balanceTable = document.querySelector('#balance-table tbody');
+        balanceTable.innerHTML = '';
+        for (let userId in balances) {
+          const row = `<tr>
+            <td>${userId}</td>
+            <td>${balances[userId].toFixed(2)}</td>
+          </tr>`;
+          balanceTable.innerHTML += row;
+        }
+      } catch (err) {
+        console.error("Error loading data:", err);
+        alert("Failed to load admin data");
+      }
     }
 
     loadData();
+    setInterval(loadData, 10000); // auto-refresh every 10 sec
   </script>
 </body>
 </html>
