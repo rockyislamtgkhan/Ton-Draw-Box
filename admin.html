@@ -1,97 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Admin Panel - TON Draw Box</title>
+  <meta charset="UTF-8">
+  <title>Admin Panel</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
-      padding: 20px;
-    }
-    h1 { color: gold; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 40px;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #444;
-      text-align: left;
-    }
-    th {
-      background: #333;
-    }
-    tr:nth-child(even) {
-      background: #222;
-    }
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    h2 { margin-top: 40px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #222; color: white; }
   </style>
 </head>
 <body>
-  <h1>📤 Withdraw Requests</h1>
+  <h1>TON Draw Box Admin Panel</h1>
+
+  <h2>💸 Withdraw Requests</h2>
   <table id="withdraw-table">
     <thead>
-      <tr>
-        <th>User ID</th>
-        <th>Username</th>
-        <th>Wallet</th>
-        <th>Amount</th>
-        <th>Time</th>
-      </tr>
+      <tr><th>User ID</th><th>Username</th><th>Wallet</th><th>Amount</th><th>Time</th></tr>
     </thead>
     <tbody></tbody>
   </table>
 
-  <h1>🧾 User Balances</h1>
+  <h2>👤 User Balances</h2>
   <table id="balance-table">
     <thead>
-      <tr>
-        <th>User ID</th>
-        <th>Balance (TON)</th>
-      </tr>
+      <tr><th>User ID</th><th>Balance (TON)</th></tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    async function loadData() {
-      try {
-        const withdrawRes = await fetch('/withdraw-requests');
-        const withdraws = await withdrawRes.json();
-        const withdrawTable = document.querySelector('#withdraw-table tbody');
-        withdrawTable.innerHTML = '';
-        withdraws.forEach(w => {
+    fetch('/withdraw-requests')
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.querySelector("#withdraw-table tbody");
+        data.reverse().forEach(req => {
           const row = `<tr>
-            <td>${w.userId}</td>
-            <td>${w.username}</td>
-            <td>${w.wallet}</td>
-            <td>${w.amount}</td>
-            <td>${w.time}</td>
+            <td>${req.userId}</td>
+            <td>${req.username}</td>
+            <td>${req.wallet}</td>
+            <td>${req.amount}</td>
+            <td>${req.time}</td>
           </tr>`;
-          withdrawTable.innerHTML += row;
+          tbody.innerHTML += row;
         });
+      });
 
-        const balanceRes = await fetch('/balances');
-        const balances = await balanceRes.json();
-        const balanceTable = document.querySelector('#balance-table tbody');
-        balanceTable.innerHTML = '';
-        for (let userId in balances) {
+    fetch('/balances')
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.querySelector("#balance-table tbody");
+        for (let userId in data) {
           const row = `<tr>
             <td>${userId}</td>
-            <td>${balances[userId].toFixed(2)}</td>
+            <td>${data[userId]}</td>
           </tr>`;
-          balanceTable.innerHTML += row;
+          tbody.innerHTML += row;
         }
-      } catch (err) {
-        console.error("Error loading data:", err);
-        alert("Failed to load admin data");
-      }
-    }
-
-    loadData();
-    setInterval(loadData, 10000); // auto-refresh every 10 sec
+      });
   </script>
 </body>
 </html>
