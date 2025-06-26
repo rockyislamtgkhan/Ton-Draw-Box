@@ -57,22 +57,41 @@ app.post('/withdraw', (req, res) => {
   const { userId, username, wallet, amount } = req.body;
 
   if (!userId || !wallet || !amount) {
-    return res.status(400).json({ success: false, message: "Missing fields" });
+    return res.status(400).json({ success: false, message: 'Missing fields' });
   }
 
   const balancesPath = path.join(__dirname, 'balances.json');
-  let balances = {};
-  try {
-    if (fs.existsSync(balancesPath)) {
-      balances = JSON.parse(fs.readFileSync(balancesPath, 'utf-8'));
-    }
-  } catch (err) {
-    return res.status(500).json({ success: false, message: 'Error reading balance file' });
-  }
+  const withdrawPath = path.join(__dirname, 'withdraw-requests.json');
 
-  if (!balances[userId] || balances[userId] < amount) {
-    return res.status(400).json({ success: false, message: "Insufficient balance" });
+  try {
+    const balances = JSON.parse(fs.readFileSync(balancesPath));
+
+    if (!balances[userId] || balances[userId] < amount) {
+      return res.status(400).json({ success: false, message: 'Insufficient balance' });
+    }
+
+    // Deduct balance
+    balances[userId] -= amount;
+    fs.writeFileSync(balancesPath, JSON.stringify(balances, null, 2));
+
+    // Append withdraw request
+    const entry = { userId, username, wallet, amount, time: new Date().toISOString() };
+    let requests = [];
+
+    if (fs.existsSync(withdrawPath)) {
+      const existing = fs.readFileSync(withdrawPath, 'utf-8');
+      requests = JSON.parse(existing);
+    }
+
+    requests.push(entry);
+    fs.writeFileSync(withdrawPath, JSON.stringify(requests, null, 2));
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
+});
 
   // ✅ Deduct balance
   balances[userId] -= amount;
